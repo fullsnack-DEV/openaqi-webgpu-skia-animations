@@ -59,8 +59,6 @@ const driverStats = [
   { value: "27", label: "Poles" },
 ];
 
-const roundBars = [5, 1, 8, 8, 9, 4, 5, 10, 9, 6, 9, 1, 9, 8, 1, 8, 2, 5, 9, 10, 1, 8, 2, 8];
-
 function createRoute(points) {
   const path = Skia.Path.Make();
   path.moveTo(points[0][0], points[0][1]);
@@ -379,6 +377,58 @@ function Ember({ clock, seed, width, height }) {
   return <Circle cx={cx} cy={cy} r={seed.r} color={seed.color} opacity={opacity} />;
 }
 
+function DriverImageBottomFade({ width, height }) {
+  // Blends the lower half of the driver image into the warm-dark background
+  // by layering a soft warm-red wash with a tighter ground fade beneath it.
+  const fadeHeight = height * 0.52;
+  return (
+    <Canvas
+      pointerEvents="none"
+      style={[styles.driverImageFade, { width, height: fadeHeight }]}
+    >
+      {/* Warm red wash that picks up the background glow as the figure dissolves */}
+      <Rect x={0} y={0} width={width} height={fadeHeight}>
+        <LinearGradient
+          start={vec(0, 0)}
+          end={vec(0, fadeHeight)}
+          colors={[
+            "rgba(0,0,0,0)",
+            "rgba(60,10,10,0.18)",
+            "rgba(70,12,12,0.42)",
+            "rgba(40,8,8,0.78)",
+            "rgba(14,3,3,0.95)",
+            "#050101",
+          ]}
+          positions={[0, 0.18, 0.42, 0.68, 0.88, 1]}
+        />
+      </Rect>
+      {/* Radial warm glow seeded near where the figure dissolves, so the blend
+          feels like ambient light, not a flat overlay */}
+      <Circle cx={width * 0.72} cy={fadeHeight * 0.45} r={width * 0.85}>
+        <RadialGradient
+          c={vec(width * 0.72, fadeHeight * 0.45)}
+          r={width * 0.85}
+          colors={[
+            "rgba(255,72,32,0.22)",
+            "rgba(180,28,28,0.12)",
+            "rgba(40,8,8,0.06)",
+            "rgba(0,0,0,0)",
+          ]}
+          positions={[0, 0.35, 0.65, 1]}
+        />
+      </Circle>
+      {/* Final ground darkening so the very bottom merges with the page bg */}
+      <Rect x={0} y={fadeHeight * 0.7} width={width} height={fadeHeight * 0.3}>
+        <LinearGradient
+          start={vec(0, fadeHeight * 0.7)}
+          end={vec(0, fadeHeight)}
+          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.55)", "#000000"]}
+        />
+      </Rect>
+    </Canvas>
+  );
+}
+
 function DriverProfileCanvas({ width, height }) {
   const clock = useClock();
   const embers = useMemo(
@@ -402,60 +452,56 @@ function DriverProfileCanvas({ width, height }) {
   );
 
   const heatSweep = useDerivedValue(() => [{ rotate: clock.value / 3600 }], [clock]);
-  const chartLeft = 76;
-  const chartTop = height * 0.68;
-  const chartWidth = width - chartLeft - 34;
-  const barGap = 7;
-  const barWidth = Math.max(5, Math.min(9, (chartWidth - barGap * (roundBars.length - 1)) / roundBars.length));
 
   return (
     <Canvas style={[styles.canvas, { width, height }]}>
       <Fill>
-        <LinearGradient start={vec(0, 0)} end={vec(width, height)} colors={["#150706", "#260707", "#030303", "#000000"]} />
+        <LinearGradient start={vec(0, 0)} end={vec(width, height)} colors={["#1A0606", "#2A0808", "#160404", "#0A0202"]} />
       </Fill>
-      <Circle cx={width * 0.78} cy={height * 0.25} r={width * 0.78}>
-        <RadialGradient c={vec(width * 0.8, height * 0.23)} r={width * 0.74} colors={["rgba(255,42,42,0.66)", "rgba(199,17,26,0.34)", "rgba(255,87,24,0.08)", "rgba(0,0,0,0)"]} />
+      {/* Wide red ambience covering most of the screen */}
+      <Circle cx={width * 0.72} cy={height * 0.5} r={width * 1.15}>
+        <RadialGradient
+          c={vec(width * 0.72, height * 0.5)}
+          r={width * 1.1}
+          colors={["rgba(255,52,52,0.62)", "rgba(214,28,32,0.42)", "rgba(180,18,22,0.22)", "rgba(80,8,8,0.12)", "rgba(0,0,0,0)"]}
+        />
       </Circle>
-      <Circle cx={width * 0.64} cy={height * 0.55} r={width * 0.5}>
-        <RadialGradient c={vec(width * 0.65, height * 0.5)} r={width * 0.48} colors={["rgba(255,150,27,0.34)", "rgba(255,60,24,0.12)", "rgba(0,0,0,0)"]} />
+      {/* Warm orange lift on the lower-right so the bottom doesn't go flat black */}
+      <Circle cx={width * 0.78} cy={height * 0.82} r={width * 0.85}>
+        <RadialGradient c={vec(width * 0.78, height * 0.82)} r={width * 0.82} colors={["rgba(255,130,30,0.32)", "rgba(255,60,24,0.16)", "rgba(0,0,0,0)"]} />
       </Circle>
-      <Group origin={vec(width * 0.74, height * 0.38)} transform={heatSweep} opacity={0.42}>
-        <Circle cx={width * 0.74} cy={height * 0.38} r={width * 0.68}>
-          <SweepGradient c={vec(width * 0.74, height * 0.38)} colors={["rgba(255,255,255,0)", "rgba(255,111,35,0.16)", "rgba(255,255,255,0)", "rgba(255,31,31,0.18)", "rgba(255,255,255,0)"]} />
+      <Group origin={vec(width * 0.7, height * 0.5)} transform={heatSweep} opacity={0.32}>
+        <Circle cx={width * 0.7} cy={height * 0.5} r={width * 0.9}>
+          <SweepGradient c={vec(width * 0.7, height * 0.5)} colors={["rgba(255,255,255,0)", "rgba(255,111,35,0.12)", "rgba(255,255,255,0)", "rgba(255,31,31,0.14)", "rgba(255,255,255,0)"]} />
         </Circle>
       </Group>
 
-      <Path path={`M ${width * 0.05} ${height * 0.5} C ${width * 0.22} ${height * 0.42} ${width * 0.22} ${height * 0.3} ${width * 0.34} ${height * 0.2} C ${width * 0.28} ${height * 0.42} ${width * 0.5} ${height * 0.5} ${width * 0.44} ${height * 0.7} C ${width * 0.28} ${height * 0.64} ${width * 0.17} ${height * 0.6} ${width * 0.05} ${height * 0.5} Z`} color="rgba(255,92,21,0.09)" />
-      <Path path={`M ${width * 0.55} ${height * 0.42} C ${width * 0.84} ${height * 0.32} ${width * 0.82} ${height * 0.16} ${width * 1.08} ${height * 0.08} C ${width * 0.96} ${height * 0.34} ${width * 1.04} ${height * 0.61} ${width * 0.68} ${height * 0.72} C ${width * 0.7} ${height * 0.58} ${width * 0.64} ${height * 0.5} ${width * 0.55} ${height * 0.42} Z`} color="rgba(255,42,42,0.12)" />
+      {/* Soft top-down darkening so the driver's dark hair separates from the red */}
+      <Rect x={0} y={0} width={width} height={height * 0.5}>
+        <LinearGradient start={vec(0, 0)} end={vec(0, height * 0.5)} colors={["rgba(0,0,0,0.92)", "rgba(0,0,0,0.55)", "rgba(0,0,0,0.12)", "rgba(0,0,0,0)"]} />
+      </Rect>
+      {/* Tight dark halo right behind the head so the hair reads against the bg */}
+      <Circle cx={width * 0.62} cy={height * 0.26} r={width * 0.5}>
+        <RadialGradient
+          c={vec(width * 0.62, height * 0.26)}
+          r={width * 0.5}
+          colors={["rgba(0,0,0,0.78)", "rgba(0,0,0,0.5)", "rgba(0,0,0,0.18)", "rgba(0,0,0,0)"]}
+          positions={[0, 0.4, 0.75, 1]}
+        />
+      </Circle>
+      {/* Left-side darkening so the stat numbers stay readable over the wider red */}
+      <Rect x={0} y={0} width={width * 0.5} height={height}>
+        <LinearGradient start={vec(0, 0)} end={vec(width * 0.5, 0)} colors={["rgba(0,0,0,0.72)", "rgba(0,0,0,0.28)", "rgba(0,0,0,0)"]} />
+      </Rect>
 
       {embers.map((seed, index) => (
         <Ember key={`ember-${index}`} clock={clock} seed={seed} width={width} height={height} />
       ))}
 
-      <Rect x={0} y={height * 0.5} width={width} height={height * 0.5}>
-        <LinearGradient start={vec(0, height * 0.5)} end={vec(0, height)} colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.78)", "#000000"]} />
+      {/* Gentle bottom fade so the Explore button sits on a clean base */}
+      <Rect x={0} y={height * 0.78} width={width} height={height * 0.22}>
+        <LinearGradient start={vec(0, height * 0.78)} end={vec(0, height)} colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.6)", "rgba(0,0,0,0.92)"]} />
       </Rect>
-
-      <Path path={`M ${chartLeft - 2} ${chartTop + 112} L ${chartLeft + chartWidth} ${chartTop + 112}`} color="rgba(255,255,255,0.12)" style="stroke" strokeWidth={1} />
-      {[0, 1, 2, 3].map((line) => (
-        <Path key={`grid-${line}`} path={`M ${chartLeft} ${chartTop + line * 26} L ${chartLeft + chartWidth} ${chartTop + line * 26}`} color="rgba(255,255,255,0.08)" style="stroke" strokeWidth={1} />
-      ))}
-      {roundBars.map((value, index) => {
-        const h = value * 11;
-        const x = chartLeft + index * (barWidth + barGap);
-        const hot = index % 5 !== 1 && index % 9 !== 2;
-        return (
-          <RoundedRect
-            key={`bar-${index}`}
-            x={x}
-            y={chartTop + 112 - h}
-            width={barWidth}
-            height={h}
-            r={barWidth / 2}
-            color={hot ? "#FF3039" : "rgba(255,255,255,0.14)"}
-          />
-        );
-      })}
     </Canvas>
   );
 }
@@ -534,8 +580,24 @@ function DriverProfileScreen({ width, height, onBack }) {
         <Text style={styles.moreText}>...</Text>
       </View>
 
-      <Text pointerEvents="none" style={[styles.bigNumber, { fontSize: Math.min(width * 0.72, 330), top: height * 0.12 }]}>1</Text>
-      <Text pointerEvents="none" style={[styles.bigNumberEdge, { fontSize: Math.min(width * 0.72, 330), top: height * 0.12 }]}>1</Text>
+      <Text
+        pointerEvents="none"
+        style={[
+          styles.bigNumber,
+          { fontSize: Math.min(width * 0.78, 360), top: height * 0.22, left: width * 0.18 },
+        ]}
+      >
+        1
+      </Text>
+      <Text
+        pointerEvents="none"
+        style={[
+          styles.bigNumberEdge,
+          { fontSize: Math.min(width * 0.78, 360), top: height * 0.22, left: width * 0.18 },
+        ]}
+      >
+        1
+      </Text>
 
       <View style={[styles.profileCopy, { top: compact ? 98 : 122 }]}>
         <Text style={styles.driverFirst}>Charles</Text>
@@ -543,7 +605,16 @@ function DriverProfileScreen({ width, height, onBack }) {
         <Text style={styles.driverMeta}>Race profile / 2018 - 2025</Text>
       </View>
 
-      <Image source={DRIVER_IMAGE} resizeMode="contain" style={[styles.driverImage, { width: width * 0.78, height: height * 0.58, top: height * 0.2 }]} />
+      <Image
+        source={DRIVER_IMAGE}
+        resizeMode="contain"
+        style={[
+          styles.driverImage,
+          { width: width * 0.7, height: height * 0.62, top: height * 0.18 },
+        ]}
+      />
+
+      <DriverImageBottomFade width={width} height={height} />
 
       <View style={[styles.statsRail, { top: compact ? 232 : 290 }]}>
         {driverStats.map((stat, index) => (
@@ -552,10 +623,6 @@ function DriverProfileScreen({ width, height, onBack }) {
             <Text style={styles.statLabel}>{stat.label}</Text>
           </View>
         ))}
-      </View>
-
-      <View style={styles.roundsLabel}>
-        <Text style={styles.roundsText}>Rounds</Text>
       </View>
 
       <View style={styles.bottomAction}>
@@ -703,22 +770,20 @@ const styles = StyleSheet.create({
   },
   bigNumber: {
     position: "absolute",
-    right: 10,
-    color: "rgba(255,255,255,0.035)",
+    color: "rgba(255,255,255,0.06)",
     fontWeight: "900",
     letterSpacing: 0,
-    zIndex: 1,
+    zIndex: 2,
   },
   bigNumberEdge: {
     position: "absolute",
-    right: 10,
-    color: "rgba(255,44,44,0.045)",
+    color: "rgba(255,44,44,0.07)",
     fontWeight: "900",
     letterSpacing: 0,
-    textShadowColor: "rgba(255,255,255,0.08)",
+    textShadowColor: "rgba(255,255,255,0.1)",
     textShadowOffset: { width: 1, height: 0 },
     textShadowRadius: 1,
-    zIndex: 1,
+    zIndex: 2,
   },
   profileCopy: {
     position: "absolute",
@@ -750,8 +815,15 @@ const styles = StyleSheet.create({
   },
   driverImage: {
     position: "absolute",
-    right: -78,
+    right: -22,
     zIndex: 3,
+  },
+  driverImageFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 4,
   },
   statsRail: {
     position: "absolute",
@@ -784,18 +856,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 17,
     fontWeight: "700",
-    letterSpacing: 0,
-  },
-  roundsLabel: {
-    position: "absolute",
-    left: 24,
-    bottom: 128,
-    zIndex: 4,
-  },
-  roundsText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "800",
     letterSpacing: 0,
   },
   bottomAction: {
