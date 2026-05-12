@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "OpenAQI WebGPU",
+    "slug": "openaqi-webgpu",
+    "scheme": "openaqi-webgpu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.townscup.openaqiwebgpu"
+    },
+    "android": {
+      "package": "com.townscup.openaqiwebgpu"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
