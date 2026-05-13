@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useRouter } from "expo-router";
 import {
   Blur,
   Canvas,
@@ -987,6 +988,7 @@ function RideDiscoveryCanvas({ width, height }) {
 export default function Page() {
   const { width, height } = useWindowDimensions();
   const [screen, setScreen] = React.useState("home");
+  const router = useRouter();
 
   if (screen === "profile") {
     return <DriverProfileScreen width={width} height={height} onBack={() => setScreen("home")} />;
@@ -996,10 +998,18 @@ export default function Page() {
     return <MapAnimationScreen width={width} height={height} onBack={() => setScreen("home")} />;
   }
 
-  return <DemoHomeScreen width={width} height={height} onSelectMap={() => setScreen("discovery")} onSelectFire={() => setScreen("profile")} />;
+  return (
+    <DemoHomeScreen
+      width={width}
+      height={height}
+      onSelectMap={() => setScreen("discovery")}
+      onSelectFire={() => setScreen("profile")}
+      onSelectCircuit={() => router.push("/circuit-morph")}
+    />
+  );
 }
 
-function DemoHomeScreen({ width, height, onSelectMap, onSelectFire }) {
+function DemoHomeScreen({ width, height, onSelectMap, onSelectFire, onSelectCircuit }) {
   return (
     <View style={styles.homeContainer}>
       <HomeShowcaseCanvas width={width} height={height} />
@@ -1022,6 +1032,15 @@ function DemoHomeScreen({ width, height, onSelectMap, onSelectFire }) {
           <View style={styles.homeOptionCopy}>
             <Text style={styles.homeOptionTitle}>Fire veil shader</Text>
             <Text style={styles.homeOptionText}>Masked burn reveal with ashes, glow, and count-up stats.</Text>
+          </View>
+          <CardArrowIcon />
+        </Pressable>
+
+        <Pressable style={[styles.homeOption, styles.homeOptionCircuit]} onPress={onSelectCircuit}>
+          <Text style={styles.homeOptionNumber}>03</Text>
+          <View style={styles.homeOptionCopy}>
+            <Text style={styles.homeOptionTitle}>Circuit morph race</Text>
+            <Text style={styles.homeOptionText}>Live-race screen with selectable F1 circuits and shader wave morphing.</Text>
           </View>
           <CardArrowIcon />
         </Pressable>
@@ -1182,6 +1201,10 @@ const styles = StyleSheet.create({
   homeOptionFire: {
     backgroundColor: "rgba(82,22,14,0.42)",
     borderColor: "rgba(255,126,72,0.22)",
+  },
+  homeOptionCircuit: {
+    backgroundColor: "rgba(110,16,22,0.4)",
+    borderColor: "rgba(255,210,80,0.22)",
   },
   homeOptionNumber: {
     width: 38,
